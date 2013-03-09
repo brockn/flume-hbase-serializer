@@ -19,12 +19,11 @@
 package com.cloudera.flume.sink.hbase;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.FlumeException;
@@ -58,13 +57,6 @@ public class RegexHbaseEventRowKeySerializer implements HbaseEventSerializer {
   /** Placeholder in colNames for row key */
   public static final String ROW_KEY_NAME = "ROW_KEY";
   
-  /*
-   * This is a nonce used in HBase row-keys, such that the same row-key never
-   * gets written more than once from within this JVM.
-   */
-  protected static final AtomicInteger nonce = new AtomicInteger(0);
-  protected static String randomKey = RandomStringUtils.randomAlphanumeric(10);
-
   protected byte[] columnFamily;
   private byte[] payload;
   private List<byte[]> colNames = Lists.newArrayList();
@@ -129,14 +121,14 @@ public class RegexHbaseEventRowKeySerializer implements HbaseEventSerializer {
       if(isTraceLogging) {
         logger.trace("Payload does not match regex");
       }
-      return Lists.newArrayList();
+      return actions;
     }
     if (matcher.groupCount() != colNames.size()) {
       if(isTraceLogging) {
         logger.trace("matcher.groupCount() != colNames.size(), " 
             + matcher.groupCount() + " != " + colNames.size());
       }
-      return Lists.newArrayList();
+      return actions;
     }
     Put put = new Put(matcher.group(rowKeyIndex + 1).getBytes(Charsets.UTF_8));
     for (int i = 0; i < colNames.size(); i++) {
@@ -150,7 +142,7 @@ public class RegexHbaseEventRowKeySerializer implements HbaseEventSerializer {
 
   @Override
   public List<Increment> getIncrements() {
-    return Lists.newArrayList();
+    return Lists.newArrayListWithCapacity(0);
   }
 
   @Override
